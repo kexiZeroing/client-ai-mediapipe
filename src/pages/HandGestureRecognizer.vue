@@ -14,6 +14,7 @@
     </div>
 
     <h2>Demo2: Webcam continuous hand gesture detection</h2>
+    <div>The default model can recognize seven classes (i.e. 👍, 👎, ✌️, ☝️, ✊, 👋, 🤟) in one or two hands.</div>
 
     <div id="liveView" class="videoView">
       <span id="webcamButton" @click="enableCam">

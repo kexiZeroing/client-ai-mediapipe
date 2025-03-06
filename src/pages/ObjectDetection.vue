@@ -1,7 +1,6 @@
 <template>
   <section id="demos" :class="{ 'invisible': !modelLoaded }">
     <h2>Demo1: Detecting Images</h2>
-
     <div class="demo1-wrap">
       <div class="detectOnClick" v-for="item in demo1Data" :key="item.id">
         <img
@@ -28,6 +27,31 @@
         </template>
       </div>
     </div>
+
+    <h2>Demo: Webcam continuous detection</h2>
+    <div style="margin-bottom: 20px;">
+      This demo uses a model trained on the COCO dataset. It can identify 80 different classes of object in an image.
+      <a href="https://github.com/amikelive/coco-labels/blob/master/coco-labels-2014_2017.txt" target="_blank">See a list of available classes</a>
+    </div>
+    <div id="liveView" class="videoView">
+      <button @click="enableCam">
+        {{ webcamRunning ? "DISABLE WEBCAM" : "ENABLE WEBCAM" }}
+      </button>
+
+      <div style="position: relative;">
+        <video ref="webcam" autoplay playsinline></video>
+        <div v-for="(detection, index) in detections" :key="index">
+          <div class="highlighter" :style="getVideoHighlighterStyle(detection)"></div>
+          <p
+            class="info"
+            :style="getVideoInfoStyle(detection)"
+          >
+            {{ detection.categories[0].categoryName }} - with
+            {{ Math.round(detection.categories[0].score * 100) }}% confidence.
+          </p>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -36,6 +60,8 @@ import { ObjectDetector, FilesetResolver } from "@mediapipe/tasks-vision";
 import { ref } from "vue";
 
 const modelLoaded = ref(false);
+const detections = ref([]);
+
 const demo1Data = ref([
   {
     id: 1,
@@ -50,9 +76,8 @@ const demo1Data = ref([
 ]);
 
 let objectDetector;
-const runningMode = "IMAGE";
+let runningMode = "IMAGE";
 
-// Initialize the object detector
 const initializeObjectDetector = async () => {
   const vision = await FilesetResolver.forVisionTasks("/wasm");
   objectDetector = await ObjectDetector.createFromOptions(vision, {
@@ -67,6 +92,11 @@ const initializeObjectDetector = async () => {
 };
 initializeObjectDetector();
 
+/********************************************************************
+ // Demo 1: Grab a bunch of images from the page and detection them
+ // upon click.
+ ********************************************************************/
+
 async function handleClick(event, id) {
   const item = demo1Data.value.find((i) => i.id === id);
   if (!item) return;
@@ -74,6 +104,11 @@ async function handleClick(event, id) {
   if (!objectDetector) {
     alert("Object Detector is still loading. Please try again.");
     return;
+  }
+
+  if (runningMode === "VIDEO") {
+    runningMode = "IMAGE";
+    await objectDetector.setOptions({ runningMode: "IMAGE" });
   }
 
   const image = event.target;
@@ -86,7 +121,6 @@ async function handleClick(event, id) {
   };
 }
 
-// Compute styles for the highlighter
 function getHighlighterStyle(detection, ratio) {
   return {
     left: `${detection.boundingBox.originX * ratio}px`,
@@ -96,7 +130,6 @@ function getHighlighterStyle(detection, ratio) {
   };
 }
 
-// Compute styles for the info text
 function getInfoStyle(detection, ratio) {
   return {
     left: `${detection.boundingBox.originX * ratio}px`,
@@ -104,9 +137,99 @@ function getInfoStyle(detection, ratio) {
     width: `${detection.boundingBox.width * ratio - 10}px`,
   };
 }
+
+/********************************************************************
+ // Demo 2: Continuously grab image from webcam stream and detect it.
+ ********************************************************************/
+
+const webcam = ref(null);
+const webcamRunning = ref(false);
+let stream = null;
+
+async function enableCam() {
+  if (!objectDetector) {
+    console.log("Wait! objectDetector not loaded yet.");
+    return;
+  }
+
+  webcamRunning.value = !webcamRunning.value;
+
+  const constraints = { video: true };
+
+  if (webcamRunning.value) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      webcam.value.srcObject = stream;
+      webcam.value.addEventListener("loadeddata", predictWebcam);
+    } catch (err) {
+      console.error("Error accessing webcam:", err);
+    }
+  } else {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      webcam.value.srcObject = null;
+    }
+  }
+}
+
+let lastVideoTime = -1;
+async function predictWebcam() {
+  if (runningMode === "IMAGE") {
+    runningMode = "VIDEO";
+    await objectDetector.setOptions({ runningMode: "VIDEO" });
+  }
+
+  const startTimeMs = performance.now();
+
+  if (webcam.value.currentTime !== lastVideoTime) {
+    lastVideoTime = webcam.value.currentTime;
+    const result = await objectDetector.detectForVideo(webcam.value, startTimeMs);
+    detections.value = result.detections;
+  }
+
+  if (webcamRunning.value) {
+    window.requestAnimationFrame(predictWebcam);
+  }
+}
+
+function getVideoHighlighterStyle(detection) {
+  const video = webcam.value;
+  if (!video) return {};
+  const scaleX = video.offsetWidth / video.videoWidth;
+  const scaleY = video.offsetHeight / video.videoHeight;
+  const left = (video.videoWidth - (detection.boundingBox.originX + detection.boundingBox.width)) * scaleX;
+  const top = detection.boundingBox.originY * scaleY;
+  const width = detection.boundingBox.width * scaleX;
+  const height = detection.boundingBox.height * scaleY;
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${width}px`,
+    height: `${height}px`,
+  };
+}
+
+function getVideoInfoStyle(detection) {
+  const video = webcam.value;
+  if (!video) return {};
+  const scaleX = video.offsetWidth / video.videoWidth;
+  const scaleY = video.offsetHeight / video.videoHeight;
+  const left = (video.videoWidth - (detection.boundingBox.originX + detection.boundingBox.width)) * scaleX;
+  const top = detection.boundingBox.originY * scaleY;
+  const width = detection.boundingBox.width * scaleX - 10;
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${width}px`,
+  };
+}
 </script>
 
 <style scoped>
+video {
+  display: block;
+  transform: rotateY(180deg);
+}
 section {
   opacity: 1;
   transition: opacity 500ms ease-in-out;
@@ -127,15 +250,16 @@ section {
   cursor: pointer;
 }
 
-.info {
-  position: absolute;
-  padding: 5px;
-  background-color: #007f8b;
-  color: #fff;
-  border: 1px dashed rgba(255, 255, 255, 0.7);
-  z-index: 2;
-  font-size: 12px;
-  margin: 0;
+.detectOnClick img {
+  width: 100%;
+}
+
+.videoView {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
 }
 
 .highlighter {
@@ -145,7 +269,14 @@ section {
   position: absolute;
 }
 
-.detectOnClick img {
-  width: 100%;
+.info {
+  position: absolute;
+  padding: 5px;
+  background-color: #007f8b;
+  color: #fff;
+  border: 1px dashed rgba(255, 255, 255, 0.7);
+  z-index: 2;
+  font-size: 12px;
+  margin: 0;
 }
 </style>
