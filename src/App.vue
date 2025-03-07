@@ -1,18 +1,12 @@
 <template>
   <nav>
-    <router-link to="/" custom v-slot="{ navigate, isActive }">
-      <button @click="navigate" :class="{ 'active-route': isActive }">
-        Home
-      </button>
-    </router-link>
-    <router-link to="/gesture-recognition" custom v-slot="{ navigate, isActive }">
-      <button @click="navigate" :class="{ 'active-route': isActive }">
-        Hand Gesture Recognition
-      </button>
-    </router-link>
-    <router-link to="/object-detection" custom v-slot="{ navigate, isActive }">
-      <button @click="navigate" :class="{ 'active-route': isActive }">
-        Object Detection
+    <router-link
+      v-for="router in routers"
+      :key="router.path"
+      :to="router.path"
+    >
+      <button :class="{ 'active-route': $route.path === router.path }">
+        {{ router.name }}
       </button>
     </router-link>
   </nav>
@@ -21,6 +15,12 @@
 </template>
 
 <script setup lang="ts">
+const routers = [
+  { path: '/', name: 'Home' },
+  { path: '/gesture-recognition', name: 'Hand Gesture Recognition' },
+  { path: '/object-detection', name: 'Object Detection' },
+  { path: '/face-landmark-detection', name: 'Face Landmark Detection' },
+]
 </script>
 
 <style scoped>
