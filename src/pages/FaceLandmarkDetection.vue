@@ -232,5 +232,120 @@ export default {
 </script>
 
 <style scoped>
+video {
+  display: block;
+  transform: rotateY(180deg);
+}
 
+section {
+  opacity: 1;
+  transition: opacity 500ms ease-in-out;
+}
+
+.invisible {
+  opacity: 0.2;
+}
+
+.videoView {
+  display: flex;
+  gap: 1rem;
+}
+.videoView,
+.blend-shapes {
+  position: relative;
+  width: 100%;
+  margin: 2% 1%;
+  cursor: pointer;
+}
+
+.videoView p {
+  position: absolute;
+  padding: 5px;
+  background-color: #007f8b;
+  color: #fff;
+  border: 1px dashed rgba(255, 255, 255, 0.7);
+  z-index: 2;
+  font-size: 12px;
+  margin: 0;
+}
+
+.canvas {
+  z-index: 1;
+  position: absolute;
+  pointer-events: none;
+}
+
+.output_canvas {
+  transform: rotateY(180deg);
+}
+
+.blend-shapes-item {
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+
+.blend-shapes-label {
+  display: flex;
+  width: 120px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-right: 4px;
+}
+
+.blend-shapes-value {
+  display: flex;
+  height: 16px;
+  align-items: center;
+  background-color: #007f8b;
+}
+
+.emotion-detection {
+  flex: 1;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.emotion-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.emotion-item {
+  margin: 10px 0;
+}
+
+.emotion-label {
+  display: inline-block;
+  width: 100px;
+  text-transform: capitalize;
+  font-weight: bold;
+}
+
+.emotion-bar-container {
+  display: inline-block;
+  width: calc(100% - 120px);
+  height: 20px;
+  background: #ddd;
+  border-radius: 4px;
+  position: relative;
+}
+
+.emotion-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.emotion-value {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #333;
+  font-size: 0.9em;
+}
 </style>
