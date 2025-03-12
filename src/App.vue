@@ -20,6 +20,7 @@ const routers = [
   { path: '/gesture-recognition', name: 'Hand Gesture Recognition' },
   { path: '/object-detection', name: 'Object Detection' },
   { path: '/face-landmark-detection', name: 'Face Landmark Detection' },
+  { path: '/face-detection', name: 'Face Detection' },
 ]
 </script>
 

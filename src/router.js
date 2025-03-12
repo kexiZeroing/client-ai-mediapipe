@@ -7,6 +7,7 @@ const routes = [
   { path: '/gesture-recognition', component: () => import('./pages/HandGestureRecognizer.vue') },
   { path: '/object-detection', component: () => import('./pages/ObjectDetection.vue') },
   { path: '/face-landmark-detection', component: () => import('./pages/FaceLandmarkDetection.vue') },
+  { path: '/face-detection', component: () => import('./pages/FaceDetection.vue') },
 ]
 
 const router = createRouter({
